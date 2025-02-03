@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genshin Wish Counter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #6750A4;
+            --secondary: #CAC4D0;
+            --background: #F6F8FC;
+            --surface: #FFFFFF;
+            --text-primary: #1D1B20;
+            --text-secondary: #49454F;
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .card {
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .button {
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            transition: background 0.2s ease-in-out;
+        }
+
+        .button:hover {
+            background-color: #F2F6FC;
+        }
+
+        /* Modal styling */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--surface);
+            border-radius: 16px;
+            padding: 24px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .modal-button {
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+            padding: 12px 16px;
+            border-radius: 24px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* Input box for manual edit */
+        .input-field {
+            width: 100%;
+            padding: 8px;
+            margin-top: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .input-field:focus {
+            outline-color: var(--primary);
+        }
+
+        /* Dropdown styling */
+        .dropdown {
+            position: absolute;
+            top: 80px;
+            background-color: var(--surface);
+            border-radius: 8px;
+            width: 400px;
+            display: none;
+            flex-direction: column;
+            padding: 8px 0;
+            gap: 8px;
+        }
+
+        .dropdown.open {
+            display: flex;
+        }
+
+        .dropdown-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background-color: #e3e4e8;
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .flex-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .button-container {
+            gap: 12px;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="content">
+        <!-- Clickable Title -->
+        <div id="banner-title" class="card text-2xl font-bold cursor-pointer shadow-sm">
+            Character Banner
+        </div>
+
+        <!-- Dropdown Menu -->
+        <div id="dropdown" class="dropdown shadow-md">
+            <div class="dropdown-item" onclick="switchBanner('character')">Character</div>
+            <div class="dropdown-item" onclick="switchBanner('weapon')">Weapon</div>
+            <div class="dropdown-item" onclick="switchBanner('standard')">Standard</div>
+            <div class="dropdown-item" onclick="switchBanner('chronicled')">Chronicled</div>
+        </div>
+
+        <!-- Counter Cards -->
+        <div class="flex-container">
+            <div class="card shadow-sm" id="fiveStarCard">
+                <p class="text-lg font-medium">5★ Pity</p>
+                <p id="five-star" class="text-3xl font-bold cursor-pointer">0</p>
+            </div>
+
+            <div class="card shadow-sm">
+                <p class="text-sm font-medium">Chance of Featured 5★</p>
+                <p id="guarantee" class="text-lg font-bold cursor-pointer">No Guarantee</p>
+            </div>
+
+            <div class="card shadow-sm" id="fourStarCard">
+                <p class="text-lg font-medium">4★ Pity</p>
+                <p id="four-star" class="text-3xl font-bold cursor-pointer">0</p>
+            </div>
+        </div>
+
+        <!-- Buttons Card -->
+        <div class="card button-container shadow-sm">
+            <button class="button bg-[#D3E3FD] text-[#041E49]" onclick="getFiveStar()">Get 5★</button>
+            <button class="button h-16 px-8 m-2 bg-[#C2E7FF] text-[#041E49] text-xl font-bold" onclick="incrementPity()">+1</button>
+            <button class="button bg-[#D3E3FD] text-[#041E49]" onclick="getFourStar()">Get 4★</button>
+        </div>
+    </div>
+
+    <!-- Modal for Confirmation -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <p>Enter the new pity value.</p>
+            <div class="input-container">
+                <input type="number" id="manual-input" class="input-field" />
+            </div>
+            <button class="modal-button" onclick="confirmEdit()">Confirm</button>
+            <button class="modal-button" onclick="cancelEdit()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Guarantee Confirmation Modal -->
+    <div id="guarantee-modal" class="modal">
+        <div class="modal-content">
+            <p>Toggle the chance status?</p>
+            <button class="modal-button" onclick="toggleGuarantee()">Yes, Toggle</button>
+            <button class="modal-button" onclick="cancelGuarantee()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let currentBanner = localStorage.getItem("currentBanner") || "character";
+let valueToEdit = null;
+let isTogglingGuarantee = false;
+
+// Toggle the dropdown visibility when title is clicked
+document.getElementById('banner-title').onclick = () => {
+    document.getElementById('dropdown').classList.toggle('open');
+};
+
+// Function to display the modal for confirmation and edit input
+function showModal(valueId) {
+    valueToEdit = valueId;
+    document.getElementById('modal').classList.add('open');
+}
+
+// Confirm the edit for 5-star and 4-star pity values
+function confirmEdit() {
+    const inputValue = document.getElementById('manual-input').value;
+    if (valueToEdit === 'five-star' && (inputValue < 0 || inputValue > 89)) {
+        alert("5-Star value must be between 0 and 89.");
+        return;
+    }
+    if (valueToEdit === 'four-star' && (inputValue < 0 || inputValue > 9)) {
+        alert("4-Star value must be between 0 and 9.");
+        return;
+    }
+
+    document.getElementById(valueToEdit).innerText = inputValue;
+    saveCounters();
+    cancelEdit();
+}
+
+function cancelEdit() {
+    document.getElementById('modal').classList.remove('open');
+    valueToEdit = null;
+    document.getElementById('manual-input').value = '';  // Clear the input field when canceled
+}
+
+// Toggle the guarantee value with a confirmation modal
+function toggleGuarantee() {
+    let guarantee = document.getElementById('guarantee').innerText;
+    document.getElementById('guarantee').innerText = (guarantee === "No Guarantee") ? "Guaranteed" : "No Guarantee";
+    saveCounters();
+    cancelGuarantee();
+}
+
+function cancelGuarantee() {
+    document.getElementById('guarantee-modal').classList.remove('open');
+    isTogglingGuarantee = false;
+    document.getElementById('manual-input').value = '';  // Clear the input field when canceled for guarantee
+}
+
+// Set event listeners for 5-star and 4-star pity values
+document.getElementById('five-star').onclick = () => showModal('five-star');
+document.getElementById('four-star').onclick = () => showModal('four-star');
+
+// Show modal for guarantee toggle
+document.getElementById('guarantee').onclick = () => {
+    isTogglingGuarantee = true;
+    document.getElementById('guarantee-modal').classList.add('open');
+};
+
+function loadCounters() {
+    document.getElementById("five-star").innerText = localStorage.getItem(currentBanner + "_fiveStar") || 0;
+    document.getElementById("four-star").innerText = localStorage.getItem(currentBanner + "_fourStar") || 0;
+    document.getElementById("guarantee").innerText = localStorage.getItem(currentBanner + "_guarantee") || "No Guarantee";
+    document.getElementById("banner-title").innerText = currentBanner.charAt(0).toUpperCase() + currentBanner.slice(1) + " Banner";
+}
+
+function saveCounters() {
+    localStorage.setItem(currentBanner + "_fiveStar", document.getElementById("five-star").innerText);
+    localStorage.setItem(currentBanner + "_fourStar", document.getElementById("four-star").innerText);
+    localStorage.setItem(currentBanner + "_guarantee", document.getElementById("guarantee").innerText);
+    localStorage.setItem("currentBanner", currentBanner);
+}
+
+function incrementPity() {
+    let fiveStar = parseInt(document.getElementById("five-star").innerText);
+    let fourStar = parseInt(document.getElementById("four-star").innerText);
+    let guarantee = document.getElementById("guarantee").innerText;
+
+    fiveStar++;
+    if (fiveStar === 90) {
+        fiveStar = 0;
+        guarantee = (guarantee === "No Guarantee") ? "Guaranteed" : "No Guarantee";
+        document.getElementById("guarantee").innerText = guarantee;
+    }
+
+    fourStar = (fourStar === 9) ? 0 : fourStar + 1;
+
+    document.getElementById("five-star").innerText = fiveStar;
+    document.getElementById("four-star").innerText = fourStar;
+    saveCounters();
+}
+
+function getFourStar() {
+    let fiveStar = parseInt(document.getElementById("five-star").innerText);
+    fiveStar = (fiveStar === 89) ? 0 : fiveStar + 1;
+    document.getElementById("five-star").innerText = fiveStar;
+    document.getElementById("four-star").innerText = 0;
+    saveCounters();
+}
+
+function getFiveStar() {
+    let fourStar = parseInt(document.getElementById("four-star").innerText);
+    let guarantee = document.getElementById("guarantee").innerText;
+
+    document.getElementById("five-star").innerText = 0;
+    document.getElementById("four-star").innerText = (fourStar === 9) ? 0 : fourStar + 1;
+    document.getElementById("guarantee").innerText = (guarantee === "No Guarantee") ? "Guaranteed" : "No Guarantee";
+    saveCounters();
+}
+
+function switchBanner(banner) {
+    currentBanner = banner;
+    loadCounters();
+    // Close the dropdown after selection
+    document.getElementById('dropdown').classList.remove('open');
+}
+
+loadCounters();
+    </script>
+</body>
+</html>
