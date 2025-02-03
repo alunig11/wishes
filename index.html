@@ -165,7 +165,7 @@
             </div>
 
             <div class="card shadow-sm">
-                <p class="text-sm font-medium">Chance of Featured 5★</p>
+                <p id="guarantee-label" class="text-sm font-medium">Chance of Featured 5★</p>
                 <p id="guarantee" class="text-lg font-bold cursor-pointer">No Guarantee</p>
             </div>
 
@@ -205,7 +205,7 @@
     </div>
 
     <script>
-        let currentBanner = localStorage.getItem("currentBanner") || "character";
+let currentBanner = localStorage.getItem("currentBanner") || "character";
 let valueToEdit = null;
 let isTogglingGuarantee = false;
 
@@ -272,6 +272,15 @@ function loadCounters() {
     document.getElementById("four-star").innerText = localStorage.getItem(currentBanner + "_fourStar") || 0;
     document.getElementById("guarantee").innerText = localStorage.getItem(currentBanner + "_guarantee") || "No Guarantee";
     document.getElementById("banner-title").innerText = currentBanner.charAt(0).toUpperCase() + currentBanner.slice(1) + " Banner";
+
+    // Change text color for "Chance of Featured 5★" when banner is "standard"
+    if (currentBanner === "standard") {
+        document.getElementById("guarantee").style.color = "white"; // Set text color to white
+		document.getElementById("guarantee-label").style.color = "white"; // Set text color to white
+    } else {
+        document.getElementById("guarantee").style.color = ""; // Reset text color
+		document.getElementById("guarantee-label").style.color = ""; // Reset text color
+    }
 }
 
 function saveCounters() {
